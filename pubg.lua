@@ -17,13 +17,17 @@ recoil_table["akm"] = {
     interval = 20,
     round_basic = 1.2,
 -----倍镜---  1,2, 3, 4, 6--
-    scope = {1,1.5,2.5,3,4}        
+    scope = {1,1.5,2.6,3,4},
+    sing_click = 24
+	
 }
 recoil_table["scar"] = {
     basic = 5.3 ,
     interval = 20,
     round_basic = 0.7,
-    scope = {1,1.5,2.5,3,4}
+    scope = {1,1.5,2.6,3,4},
+    sing_click = 24	
+	
 }
 
 ----带配件的m4---mp5都可以---
@@ -31,7 +35,8 @@ recoil_table["mp5"] = {
     basic = 5 ,
     interval = 20,
     round_basic = 0.7,
-    scope = {1,1.5,2.5,3,4}
+    scope = {1,1.5,2.5,3,4},
+    sing_click = 24
 }
 ---不下压------
 recoil_table["empty"] = {
@@ -39,7 +44,12 @@ recoil_table["empty"] = {
     interval = 100,
     round_basic = 1.2
 }
-
+----单点下压
+function single_click_recoil(_weapon,_cur_scope)
+     local scop_basic = recoil_table[_weapon]["scope"][_cur_scope]	
+     local single_value = recoil_table[_weapon]["sing_click"]
+     single_value = scop_basic*single_value - 2
+     return single_value
 
 -- 根据武器名和已开火时间计算压枪值, _weapon:武器名， _round:已开枪次数
 function recoil_value(_weapon, _round,_cur_scope)
@@ -115,7 +125,7 @@ function OnEvent(event, arg)
         local cur_weapon_name = weapon_arr[cur_weapon]
         if ("MOUSE_BUTTON_PRESSED" == event and "empty" ~= cur_weapon_name )
         then
-           
+	    --连射下压
             local round = 1
             repeat
                 --OutputLogMessage("Fire!\n")
@@ -129,7 +139,15 @@ function OnEvent(event, arg)
 
                 Sleep(intervals)
                 round = round + 1
-            until not IsMouseButtonPressed(1)
+            until not IsMouseButtonPressed(1) 
+	   --单点下压			
+	    round = 1
+	    local single_click_recoil = single_click_recoil(cur_weapon_name,cur_scope)
+	    repeat
+		MoveMouseRelative(0, 1)
+		Sleep(1)
+		round = round + 1
+	   until round > single_click_recoil	    
         end
     end
 end
