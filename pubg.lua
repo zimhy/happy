@@ -13,31 +13,23 @@ local recoil_table = {}
 ----仅适合akm----
 
 recoil_table["akm"] = {
-    basic = 5.3 ,
+    basic = 5 ,
     interval = 20,
-    round_basic = 1.2,
+    round_basic = 1.1,
 -----倍镜---  1,2, 3, 4, 6--
-    scope = {1,1.5,2.6,3,4},
+    scope = {1,1.75,2.5,3.56},
     sing_click = 24
 	
 }
 recoil_table["scar"] = {
-    basic = 5.3 ,
     interval = 20,
-    round_basic = 0.7,
-    scope = {1,1.5,2.6,3,4},
+    basic = 4.5 ,
+    round_basic = 1.0,
+    scope = {1,1.75,2.5,3.56},
     sing_click = 24	
 	
 }
 
-----带配件的m4---mp5都可以---
-recoil_table["mp5"] = {
-    basic = 5 ,
-    interval = 20,
-    round_basic = 0.7,
-    scope = {1,1.5,2.5,3,4},
-    sing_click = 24
-}
 ---不下压------
 recoil_table["empty"] = {
     basic =0,
@@ -50,8 +42,8 @@ function single_click_recoil(_weapon,_cur_scope)
      local single_value = recoil_table[_weapon]["sing_click"]
      single_value = scop_basic*single_value - 2
      return single_value
-
--- 根据武器名和已开火时间计算压枪值, _weapon:武器名， _round:已开枪次数
+end
+--根据武器名和已开火时间计算压枪值, _weapon:武器名， _round:已开枪次数
 function recoil_value(_weapon, _round,_cur_scope)
     local step = _round%40+1
 
@@ -62,11 +54,11 @@ function recoil_value(_weapon, _round,_cur_scope)
     local scop_basic = recoil_table[_weapon]["scope"][_cur_scope]
 
     -- 武器开枪间隔
+
         -- 产生的是[1,random_limit]的随机数，所以减一是[0, random_limit
-
     -- 开枪间隔加上随机值
-
-    weapon_recoil = (math.log10(_round)*weapon_round_basic + weapon_recoil)*scop_basic
+    
+    weapon_recoil = (_round^0.3*weapon_round_basic + weapon_recoil)*scop_basic
     OutputLogMessage("round %s weapon_recoil: %s\n",_round, weapon_recoil)
     return weapon_intervals, weapon_recoil
 end
@@ -82,7 +74,16 @@ function OnEvent(event, arg)
         EnablePrimaryMouseButtonEvents(true)
     end
 
-    -- 切换武器键，下侧键
+    if (3 == arg and "MOUSE_BUTTON_RELEASED" == event and "empty" ~= cur_weapon)
+    then
+        --单点下压
+        local round = 1
+        local cur_weapon_name = weapon_arr[cur_weapon]
+        local single_click_recoil = single_click_recoil(cur_weapon_name,cur_scope)
+		MoveMouseRelative(0, single_click_recoil)
+		
+    end
+    -- 切换武器键
     if (6 == arg and "MOUSE_BUTTON_RELEASED" == event)
     then
         cur_weapon = cur_weapon + 1
@@ -94,22 +95,11 @@ function OnEvent(event, arg)
         OutputLogMessage("Current Weapon: %s\n", weapon_arr[cur_weapon])
     end
 
-    if(5 == arg and "MOUSE_BUTTON_RELEASED" == event)
-    then
-        cur_scope = cur_scope + 1
-        if(cur_scope>5)
-       then
-            cur_scope = 5
-       end
-       OutputLogMessage("Current Scope : %s\n", cur_scope)
-             
-    end
 
     if(4 == arg and "MOUSE_BUTTON_RELEASED" == event)
-    
     then
         cur_scope = cur_scope - 1
-        if(cur_scope&lt;1)
+        if(cur_scope<1)
         then
             cur_scope = 1
         end
@@ -117,6 +107,16 @@ function OnEvent(event, arg)
              
     end
 
+    if(5 == arg and "MOUSE_BUTTON_RELEASED" == event)
+    then
+        cur_scope = cur_scope + 1
+        if(cur_scope>5)
+        then
+            cur_scope = 5
+        end
+        OutputLogMessage("Current Scope : %s\n", cur_scope)
+             
+    end
 
     
     if (1 == arg)
@@ -130,8 +130,7 @@ function OnEvent(event, arg)
             repeat
                 --OutputLogMessage("Fire!\n")
                 -- 按下左键并且释放
-              
-
+             
                 local intervals,recovery = recoil_value(cur_weapon_name, round ,cur_scope)
 
                 -- 回复鼠标，MoveMouseRelative(x,y)，y为正数时鼠标向下
@@ -140,14 +139,6 @@ function OnEvent(event, arg)
                 Sleep(intervals)
                 round = round + 1
             until not IsMouseButtonPressed(1) 
-	   --单点下压			
-	    round = 1
-	    local single_click_recoil = single_click_recoil(cur_weapon_name,cur_scope)
-	    repeat
-		MoveMouseRelative(0, 1)
-		Sleep(1)
-		round = round + 1
-	   until round > single_click_recoil	    
         end
     end
 end
